@@ -39,17 +39,18 @@ D2lWusoe2/nEqfDVVWGWlyJ7yOmqaVm/iNUN9B2N2g==
 `
 
 func TestSNI(t *testing.T) {
-	wg := new(sync.WaitGroup)
-	wg.Add(1)
+	server_started := new(sync.WaitGroup)
+	server_started.Add(1)
+	server_stopped := new(sync.WaitGroup)
+	server_stopped.Add(1)
 	go func() {
 		l, err := net.Listen("tcp", ":3000")
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer l.Close()
-		wg.Done()
-		wg.Add(1)
-		defer wg.Done()
+		server_started.Done()
+		defer server_stopped.Done()
 		conn, err := l.Accept()
 		if err != nil {
 			return
@@ -65,12 +66,12 @@ func TestSNI(t *testing.T) {
 		}
 		return
 	}()
-	wg.Wait()
+	server_started.Wait()
 	_, err := tls.Dial("tcp", "localhost:3000", nil)
 	if err != nil && err != io.EOF {
 		t.Fatal(err)
 	}
-	wg.Wait()
+	server_stopped.Wait()
 }
 
 func TestBuffConn(t *testing.T) {
